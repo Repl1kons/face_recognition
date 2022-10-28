@@ -7,7 +7,6 @@ import face_recognition
 import os
 import logging
 
-
 logging.basicConfig(level = "DEBUG", filename = "server.log", format='%(asctime)s-%(levelname)s-%(filename)s-%(message)s', datefmt='%d-%b-%y %H:%M:%S')
 loger = logging.getLogger()
 
@@ -22,39 +21,26 @@ server_socket.listen(5)
 # print("LISTENING AT: ", socket_address)
 loger.debug(f"LISTENING AT: {socket_address}")
 
-
-
 path = 'knowsFaces'
 images = []
 classNames = []
 myList = os.listdir(path)
-
-
 
 for cls in myList:
     curImg = cv2.imread(f'{path}/{cls}')
     images.append(curImg)
     classNames.append(os.path.splitext(cls)[0])
 
-
-
-
-
-def findEncodings(images):
+def findEncodings(image):
     encodeList = []
-    for img in images:
+    for img in image:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         encode = face_recognition.face_encodings(img)[0]
         encodeList.append(encode)
     return encodeList
 
-
 encodeListKnow = findEncodings(images)
-
 print("Декодирование завершено!")
-
-
-
 
 client_socket, addr = server_socket.accept()
 while True:
@@ -77,7 +63,6 @@ while True:
             faceDis = face_recognition.face_distance(encodeListKnow, encodeFace)
             matchIndex = np.argmin(faceDis)
             name = 'Unknown'
-
             if matches[matchIndex]:
                 name = classNames[matchIndex]
                 y1, x2, y2, x1 = faceLoc
@@ -85,15 +70,12 @@ while True:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
                 cv2.putText(frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-
-
             else:
                 y1, x2, y2, x1 = faceLoc
                 y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
                 cv2.putText(frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-
 
         data = pickle.dumps(frame)
         client_socket.sendall(struct.pack("=L", len(data)) + data)
